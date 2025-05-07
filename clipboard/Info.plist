@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict/>
+	</array>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>This app needs to send paste commands to other applications.</string>
+	<key>NSInputMonitoringUsageDescription</key>
+	<string>This app needs to monitor input to provide clipboard functionality.</string>
+</dict>
+</plist>

@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		1FEEADA52DC8901800031938 /* HotKey in Frameworks */ = {isa = PBXBuildFile; productRef = 1FEEADA42DC8901800031938 /* HotKey */; };
+		1FEEADA72DC8901B00031938 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = 1FEEADA62DC8901B00031938 /* KeyboardShortcuts */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		1FEEAD712DC7BAEB00031938 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,11 +32,26 @@
 		1FEEAD622DC7BAE900031938 /* clipboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = clipboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FEEAD702DC7BAEB00031938 /* clipboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clipboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FEEAD7A2DC7BAEB00031938 /* clipboardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clipboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1FEEADA02DC88FEF00031938 /* KeyboardShortcuts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = KeyboardShortcuts; path = "/Users/sid/Library/Developer/Xcode/DerivedData/clipboard-dackrlsqrylzvbcfsvotygwsrqid/SourcePackages/checkouts/KeyboardShortcuts"; sourceTree = "<absolute>"; };
+		1FEEADA22DC88FF200031938 /* HotKey */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HotKey; path = "/Users/sid/Library/Developer/Xcode/DerivedData/clipboard-dackrlsqrylzvbcfsvotygwsrqid/SourcePackages/checkouts/HotKey"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		1FEEAD9B2DC7E29900031938 /* Exceptions for "clipboard" folder in "clipboard" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 1FEEAD612DC7BAE900031938 /* clipboard */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1FEEAD642DC7BAE900031938 /* clipboard */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				1FEEAD9B2DC7E29900031938 /* Exceptions for "clipboard" folder in "clipboard" target */,
+			);
 			path = clipboard;
 			sourceTree = "<group>";
 		};
@@ -52,6 +72,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1FEEADA52DC8901800031938 /* HotKey in Frameworks */,
+				1FEEADA72DC8901B00031938 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +100,7 @@
 				1FEEAD642DC7BAE900031938 /* clipboard */,
 				1FEEAD732DC7BAEB00031938 /* clipboardTests */,
 				1FEEAD7D2DC7BAEB00031938 /* clipboardUITests */,
+				1FEEAD9F2DC88FEF00031938 /* Frameworks */,
 				1FEEAD632DC7BAE900031938 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +113,15 @@
 				1FEEAD7A2DC7BAEB00031938 /* clipboardUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		1FEEAD9F2DC88FEF00031938 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1FEEADA02DC88FEF00031938 /* KeyboardShortcuts */,
+				1FEEADA22DC88FF200031938 /* HotKey */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,6 +144,8 @@
 			);
 			name = clipboard;
 			packageProductDependencies = (
+				1FEEADA42DC8901800031938 /* HotKey */,
+				1FEEADA62DC8901B00031938 /* KeyboardShortcuts */,
 			);
 			productName = clipboard;
 			productReference = 1FEEAD622DC7BAE900031938 /* clipboard.app */;
@@ -195,6 +229,10 @@
 			);
 			mainGroup = 1FEEAD592DC7BAE900031938;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				1FEEAD962DC7D14900031938 /* XCRemoteSwiftPackageReference "HotKey" */,
+				1FEEAD9E2DC7E6AA00031938 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1FEEAD632DC7BAE900031938 /* Products */;
 			projectDirPath = "";
@@ -398,6 +436,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = clipboard/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -423,6 +462,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = clipboard/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -541,6 +581,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		1FEEAD962DC7D14900031938 /* XCRemoteSwiftPackageReference "HotKey" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/soffes/HotKey";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+		1FEEAD9E2DC7E6AA00031938 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.3.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1FEEADA42DC8901800031938 /* HotKey */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1FEEAD962DC7D14900031938 /* XCRemoteSwiftPackageReference "HotKey" */;
+			productName = HotKey;
+		};
+		1FEEADA62DC8901B00031938 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 1FEEAD9E2DC7E6AA00031938 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 1FEEAD5A2DC7BAE900031938 /* Project object */;
 }
