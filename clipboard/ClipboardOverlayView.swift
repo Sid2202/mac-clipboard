@@ -4,122 +4,170 @@ import AppKit
 struct ClipboardOverlayView: View {
     var clipboardManager: ClipboardManager
     var onDismiss: () -> Void
+    @State private var hoveredIndex: Int? = nil
+    @State private var selectedItem: String? = nil
+    @State private var showCopiedIndicator = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(clipboardManager.history.indices, id: \.self) { index in
-                let item = clipboardManager.history[index]
+            // Header with instructions
+            VStack(spacing: 4) {
+                HStack {
+                    Text("Clipboard")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Button(action: onDismiss) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
                 
+                // Instructions for users
+                Text("Click an item to copy, then paste manually with ⌘V")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Color(colorScheme == .dark ? NSColor.windowBackgroundColor : NSColor.controlBackgroundColor))
+            
+            Divider()
+            
+            // Content
+            if clipboardManager.history.isEmpty {
+                Text("Clipboard history is empty")
+                    .foregroundColor(.secondary)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(clipboardManager.history.indices, id: \.self) { index in
+                            let item = clipboardManager.history[index]
+                            clipboardItemView(item, index: index)
+                        }
+                    }
+                }
+            }
+            
+            // Optional: "Copy & Close" button at the bottom
+            if selectedItem != nil {
+                Divider()
                 Button(action: {
-                    // Copy to clipboard
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(item, forType: .string)
-                    
-                    // Attempt to paste using AX API
-                    pasteToFrontmostApp()
-                    
-                    // Close the overlay
                     onDismiss()
                 }) {
-                    HStack {
-                        Text(truncateText(item, maxLength: 50))
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        
-                        Spacer()
-                    }
-                    .padding(.vertical, 5)
-                    .padding(.horizontal, 10)
-                    .contentShape(Rectangle())
+                    Text("Copied! Now press ⌘V to paste")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(Color.accentColor.opacity(0.2))
+                        .cornerRadius(4)
                 }
-                .buttonStyle(ClipboardItemButtonStyle(isSelected: index == 0))
-                
-                if index < clipboardManager.history.count - 1 {
-                    Divider()
-                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
         }
-        .frame(maxWidth: .infinity)
-        .background(Color(NSColor.windowBackgroundColor).opacity(0.9))
-        .cornerRadius(10)
-        .shadow(radius: 5)
-    }
-    
-    private func truncateText(_ text: String, maxLength: Int) -> String {
-        return text.count > maxLength ?
-            String(text.prefix(maxLength)) + "..." :
-            text
-    }
-    
-    private func pasteToFrontmostApp() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Get the frontmost application
-            if let frontmostApp = NSWorkspace.shared.frontmostApplication {
-                let targetAppName = frontmostApp.localizedName ?? "the frontmost application"
-                
-                let script = """
-                tell application "\(targetAppName)"
-                    activate
-                    tell application "System Events"
-                        keystroke "v" using command down
-                    end tell
-                end tell
-                """
-                
-                var error: NSDictionary?
-                if let scriptObject = NSAppleScript(source: script) {
-                    scriptObject.executeAndReturnError(&error)
-                    if let error = error {
-                        print("Error executing AppleScript: \(error)")
-                        
-                        // Fallback to a more generic approach
-                        fallbackPaste()
+        .frame(width: 320, height: min(400, CGFloat(clipboardManager.history.count * 45 + (selectedItem != nil ? 120 : 80))))
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(NSColor.windowBackgroundColor))
+                .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 0)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            // Copied indicator
+            Group {
+                if showCopiedIndicator {
+                    VStack {
+                        Text("Copied!")
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                            .shadow(radius: 2)
+                    }
+                    .transition(.scale.combined(with: .opacity))
+                    .onAppear {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            withAnimation {
+                                showCopiedIndicator = false
+                            }
+                        }
                     }
                 }
-            } else {
-                fallbackPaste()
             }
-        }
+        )
     }
     
-    private func fallbackPaste() {
-        // This is a fallback method that tries an alternative approach
-        let script = """
-        tell application "System Events"
-            keystroke "v" using command down
-        end tell
-        """
+    private func clipboardItemView(_ item: String, index: Int) -> some View {
+        let isHovered = hoveredIndex == index
+        let isSelected = selectedItem == item
         
-        var error: NSDictionary?
-        if let scriptObject = NSAppleScript(source: script) {
-            scriptObject.executeAndReturnError(&error)
-            if let error = error {
-                print("Fallback paste failed: \(error)")
+        return Button(action: {
+            // Just copy to clipboard, don't try to paste
+            clipboardManager.setClipboard(item)
+            selectedItem = item
+            
+            // Show a brief "Copied!" indicator
+            withAnimation {
+                showCopiedIndicator = true
             }
-        }
-    }
-}
-
-// Custom button style for clipboard items
-struct ClipboardItemButtonStyle: ButtonStyle {
-    var isSelected: Bool
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(maxWidth: .infinity, alignment: .leading)
+        }) {
+            HStack {
+                Text(displayText(item))
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                
+                // Show a checkmark for the selected item
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.accentColor)
+                        .padding(.trailing, 12)
+                }
+            }
+            .frame(maxWidth: .infinity)
             .background(
                 Group {
-                    if configuration.isPressed {
-                        Color.accentColor.opacity(0.3)
-                    } else if isSelected {
-                        Color.accentColor.opacity(0.1)
+                    if isSelected {
+                        Color.accentColor.opacity(0.2)
+                    } else if isHovered {
+                        Color(NSColor.selectedControlColor)
                     } else {
                         Color.clear
                     }
                 }
             )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                hoveredIndex = hovering ? index : nil
+            }
+        }
+        
+        // Add divider between items
+        .overlay(
+            Divider()
+                .padding(.leading, 12)
+                .opacity(index < clipboardManager.history.count - 1 ? 1 : 0),
+            alignment: .bottom
+        )
+    }
+    
+    private func displayText(_ text: String) -> String {
+        // Remove excessive whitespace and newlines for display
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let withoutNewlines = trimmed.replacingOccurrences(of: "\n", with: " ")
+        return withoutNewlines
     }
 }
-

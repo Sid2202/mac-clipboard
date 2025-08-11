@@ -6,8 +6,6 @@ extension KeyboardShortcuts.Name {
     static let showClipboardOverlay = Self("showClipboardOverlay")
 }
 
-
-
 class ClipboardOverlayManager: NSObject {
     static var shared: ClipboardOverlayManager?
     private var panel: NSPanel?
@@ -40,6 +38,7 @@ class ClipboardOverlayManager: NSObject {
         
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Show Clipboard", action: #selector(showOverlayFromMenu), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Clear History", action: #selector(clearClipboardHistory), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
@@ -49,6 +48,10 @@ class ClipboardOverlayManager: NSObject {
     
     @objc private func showOverlayFromMenu() {
         toggleOverlay()
+    }
+    
+    @objc private func clearClipboardHistory() {
+        clipboardManager.clearHistory()
     }
     
     @objc private func showPreferences() {
@@ -84,25 +87,47 @@ class ClipboardOverlayManager: NSObject {
             panel.isOpaque = false
             panel.backgroundColor = .clear
             panel.hasShadow = true
-            // Fix: Choose only one of these behaviors
             panel.collectionBehavior = [.canJoinAllSpaces, .transient]
             panel.ignoresMouseEvents = false
             panel.hidesOnDeactivate = false
             panel.isReleasedWhenClosed = false
             
-            // Position near mouse cursor
+            // Position panel at the cursor location
             if let screen = NSScreen.main {
                 let mouseLocation = NSEvent.mouseLocation
-                let panelSize = CGSize(width: 300, height: min(30.0 * CGFloat(self.clipboardManager.history.count + 1), 300))
-                let x = min(max(mouseLocation.x - panelSize.width/2, 0), screen.frame.width - panelSize.width)
-                let y = min(max(mouseLocation.y - panelSize.height/2, 0), screen.frame.height - panelSize.height)
-                panel.setFrame(NSRect(x: x, y: y, width: panelSize.width, height: panelSize.height), display: true)
+                
+                // Calculate height based on number of items (with min/max constraints)
+                let itemHeight: CGFloat = 45
+                let headerHeight: CGFloat = 40
+                let itemCount = CGFloat(self.clipboardManager.history.count)
+                let calculatedHeight = min(400, max(100, itemCount * itemHeight + headerHeight))
+                
+                let panelSize = CGSize(width: 320, height: calculatedHeight)
+                
+                // Adjust position to ensure panel is fully visible on screen
+                let x = min(max(mouseLocation.x - panelSize.width/2, screen.visibleFrame.minX),
+                           screen.visibleFrame.maxX - panelSize.width)
+                
+                // Position above cursor if there's room, otherwise below
+                var y = mouseLocation.y + 10
+                if y + panelSize.height > screen.visibleFrame.maxY {
+                    y = mouseLocation.y - panelSize.height - 10
+                }
+                
+                panel.setFrame(NSRect(origin: CGPoint(x: x, y: y), size: panelSize), display: true)
             }
             
             panel.makeKeyAndOrderFront(nil)
             panel.orderFrontRegardless()
             
             self.panel = panel
+            
+            // Add event monitor to dismiss overlay when clicking outside
+            NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+                if let panel = self?.panel, panel.isVisible {
+                    self?.panel?.orderOut(nil)
+                }
+            }
         }
     }
 }

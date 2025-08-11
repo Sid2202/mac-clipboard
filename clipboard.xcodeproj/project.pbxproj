@@ -32,8 +32,6 @@
 		1FEEAD622DC7BAE900031938 /* clipboard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = clipboard.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FEEAD702DC7BAEB00031938 /* clipboardTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clipboardTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FEEAD7A2DC7BAEB00031938 /* clipboardUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = clipboardUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		1FEEADA02DC88FEF00031938 /* KeyboardShortcuts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = KeyboardShortcuts; path = "/Users/sid/Library/Developer/Xcode/DerivedData/clipboard-dackrlsqrylzvbcfsvotygwsrqid/SourcePackages/checkouts/KeyboardShortcuts"; sourceTree = "<absolute>"; };
-		1FEEADA22DC88FF200031938 /* HotKey */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = HotKey; path = "/Users/sid/Library/Developer/Xcode/DerivedData/clipboard-dackrlsqrylzvbcfsvotygwsrqid/SourcePackages/checkouts/HotKey"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -118,8 +116,6 @@
 		1FEEAD9F2DC88FEF00031938 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				1FEEADA02DC88FEF00031938 /* KeyboardShortcuts */,
-				1FEEADA22DC88FF200031938 /* HotKey */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";

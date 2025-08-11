@@ -4,38 +4,27 @@
 //
 //  Created by Sidhanti Patil on 04/05/25.
 //
-
 import Cocoa
 import SwiftUI
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusItem: NSStatusItem?
-    var clipboardManager: ClipboardManager?
+    var clipboardManager = ClipboardManager()
     var overlayManager: ClipboardOverlayManager?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Set the app to be an accessory app (menu bar only)
+        NSApplication.shared.setActivationPolicy(.accessory)
+        
+        // Initialize the clipboard manager
         clipboardManager = ClipboardManager()
+        
+        // Initialize the overlay manager
         overlayManager = ClipboardOverlayManager()
-        overlayManager?.startHotkey(clipboardManager: clipboardManager!)
+        overlayManager?.startHotkey(clipboardManager: clipboardManager)
         
-        setupStatusItem()
+        // Close any open windows (this handles any automatically created windows)
+        NSApplication.shared.windows.forEach { $0.close() }
         
-        print("App delegate initialized")
-    }
-    
-    func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem?.button?.title = "📋"
-        
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Show Clipboard", action: #selector(showOverlay), keyEquivalent: "v"))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        
-        statusItem?.menu = menu
-    }
-    
-    @objc func showOverlay() {
-        overlayManager?.toggleOverlay()
+        print("Clipboard manager initialized. Press Cmd+Shift+V to show overlay")
     }
 }

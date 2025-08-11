@@ -9,21 +9,10 @@ import SwiftUI
 
 @main
 struct clipboardApp: App {
-    @StateObject private var clipboardManager = ClipboardManager()
-    let overlayManager = ClipboardOverlayManager()
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-//                EmptyView()
-                .onAppear {
-                    overlayManager.startHotkey(clipboardManager: clipboardManager)
-                    print("Clipboard app initialized. Press Cmd+Shift+V to show overlay")
-                }
-                .environmentObject(clipboardManager)
-        }
-        .commands{
-            
-        }
+        // Don't create any visible windows
+        Settings { }
     }
 }
