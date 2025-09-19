@@ -10,7 +10,7 @@ class ClipboardOverlayManager: NSObject {
     static var shared: ClipboardOverlayManager?
     private var panel: NSPanel?
     private var clipboardManager: ClipboardManager!
-    private var statusItem: NSStatusItem?
+//    private var statusItem: NSStatusItem?
     
     override init() {
         super.init()
@@ -29,21 +29,7 @@ class ClipboardOverlayManager: NSObject {
         }
         
         // Also add a menu bar item as a fallback
-        setupStatusItem()
-    }
-    
-    private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        statusItem?.button?.title = "📋"
-        
-        let menu = NSMenu()
-        menu.addItem(NSMenuItem(title: "Show Clipboard", action: #selector(showOverlayFromMenu), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Clear History", action: #selector(clearClipboardHistory), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
-        menu.addItem(NSMenuItem.separator())
-        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
-        
-        statusItem?.menu = menu
+//        setupStatusItem()
     }
     
     @objc private func showOverlayFromMenu() {
@@ -99,7 +85,7 @@ class ClipboardOverlayManager: NSObject {
                 // Calculate height based on number of items (with min/max constraints)
                 let itemHeight: CGFloat = 45
                 let headerHeight: CGFloat = 40
-                let itemCount = CGFloat(self.clipboardManager.history.count)
+                let itemCount = CGFloat(self.clipboardManager.items.count)
                 let calculatedHeight = min(400, max(100, itemCount * itemHeight + headerHeight))
                 
                 let panelSize = CGSize(width: 320, height: calculatedHeight)

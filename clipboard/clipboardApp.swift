@@ -12,7 +12,6 @@ struct clipboardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
-        // Don't create any visible windows
         Settings { }
     }
 }

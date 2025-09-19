@@ -1,116 +1,179 @@
-import Foundation
-import AppKit
-import Carbon.HIToolbox
+import Cocoa
+import SwiftUI
+import Combine
 
-class ClipboardManager: ObservableObject{
-    @Published var history: [String] = []
-    
-    private let pasteboard = NSPasteboard.general
-    private var lastChangeCount: Int
+class ClipboardManager: ObservableObject {
+    @Published var items: [ClipboardItem] = []
     private var timer: Timer?
-    private let maxHistoryItems = 20
+    private let maxItems = 100
+    private var lastCopiedString: String = ""
+    private var pasteboardChangeCount = NSPasteboard.general.changeCount
     
     init() {
-        lastChangeCount = pasteboard.changeCount
+        // Load any saved items
+        loadItems()
+        
+        // Start monitoring clipboard
         startMonitoring()
     }
     
-    deinit {
-        timer?.invalidate()
-    }
-    
-    private func startMonitoring() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true){ [weak self] _ in
+    func startMonitoring() {
+        // Check clipboard every second
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             self?.checkClipboard()
         }
     }
     
-    private func checkClipboard() {
-        if pasteboard.changeCount != lastChangeCount {
-            lastChangeCount = pasteboard.changeCount
+    func stopMonitoring() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    func checkClipboard() {
+        let pasteboard = NSPasteboard.general
+        
+        // Only process if the pasteboard has changed
+        if pasteboard.changeCount != pasteboardChangeCount {
+            pasteboardChangeCount = pasteboard.changeCount
             
-            // Try to get text content
-            if let newText = pasteboard.string(forType: .string),
-               !newText.isEmpty,
-               !history.contains(newText) {
-                
-                DispatchQueue.main.async {
-                    self.history.insert(newText, at: 0)
-                    if self.history.count > self.maxHistoryItems {
-                        self.history.removeLast()
-                    }
+            if let string = pasteboard.string(forType: .string) {
+                // Don't add duplicate of the most recent item
+                if !items.isEmpty && items[0].text == string && !items[0].isPinned {
+                    return
                 }
+                
+                // Don't add empty strings
+                if string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    return
+                }
+                
+                // Don't add if it's the same as what we just copied programmatically
+                if string == lastCopiedString {
+                    lastCopiedString = ""
+                    return
+                }
+                
+                // Add new item at the beginning
+                let newItem = ClipboardItem(text: string, timestamp: Date())
+                addItem(newItem)
             }
         }
     }
     
-    func setClipboard(_ text: String) {
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-        lastChangeCount = pasteboard.changeCount
-    }
-    
-    func simulatePaste() {
-        // First, set the clipboard content (already done in the button action)
-        
-        // Give a slight delay to ensure the clipboard content is ready
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Create a keyboard event source
-            guard let source = CGEventSource(stateID: .combinedSessionState) else {
-                print("Failed to create event source")
-                return
-            }
-            
-            // Create the cmd+v down event
-            guard let cmdVDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true) else {
-                print("Failed to create key down event")
-                return
-            }
-            cmdVDown.flags = .maskCommand
-            
-            // Create the cmd+v up event
-            guard let cmdVUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
-                print("Failed to create key up event")
-                return
-            }
-            cmdVUp.flags = .maskCommand
-            
-            // Post the events to simulate cmd+v
-            cmdVDown.post(tap: .cgAnnotatedSessionEventTap)
-            cmdVUp.post(tap: .cgAnnotatedSessionEventTap)
-            
-            print("Paste events sent")
+    func addItem(_ item: ClipboardItem) {
+        // Remove existing unpinned duplicate if any
+        if let existingIndex = items.firstIndex(where: { $0.text == item.text && !$0.isPinned }) {
+            items.remove(at: existingIndex)
         }
-    }
-    
-    private func pasteUsingCGEvent() {
-        let src = CGEventSource(stateID: .combinedSessionState)
-        let cmdDown = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: true) // 'V' key
-        cmdDown?.flags = .maskCommand
-        let cmdUp = CGEvent(keyboardEventSource: src, virtualKey: 0x09, keyDown: false)
-        cmdUp?.flags = .maskCommand
         
-        cmdDown?.post(tap: .cghidEventTap)
-        cmdUp?.post(tap: .cghidEventTap)
-    }
-    
-    private func pasteUsingAppleScript() {
-        let script = """
-        tell application "System Events"
-            keystroke "v" using command down
-        end tell
-        """
+        // Add at beginning
+        items.insert(item, at: 0)
         
-        var error: NSDictionary?
-        if let scriptObject = NSAppleScript(source: script) {
-            scriptObject.executeAndReturnError(&error)
-            if let error = error {
-                print("AppleScript paste failed: \(error)")
+        // Limit total number of items
+        while items.count > maxItems {
+            // Find the last unpinned item to remove
+            if let lastUnpinnedIndex = items.lastIndex(where: { !$0.isPinned }) {
+                items.remove(at: lastUnpinnedIndex)
+            } else {
+                // All items are pinned, so remove the last pinned item
+                items.removeLast()
             }
         }
+        
+        // Save after change
+        saveItems()
     }
     
     func clearHistory() {
-        history.removeAll()
+        // Remove all unpinned items
+        items.removeAll(where: { !$0.isPinned })
+        saveItems()
+    }
+    
+    func setClipboard(_ item: ClipboardItem) {
+        setClipboard(item.text)
+    }
+    
+    func setClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+        lastCopiedString = text
+        
+        // If this item already exists and isn't at index 0, move it to the top
+        if let existingIndex = items.firstIndex(where: { $0.text == text }),
+           existingIndex > 0 {
+            let item = items.remove(at: existingIndex)
+            items.insert(item, at: 0)
+            saveItems()
+        }
+    }
+    
+    func togglePin(for item: ClipboardItem) {
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index].isPinned.toggle()
+            
+            // If the item is now pinned, it should still stay where it is
+            // If it's unpinned, we can choose to reorder it or leave it
+            
+            saveItems()
+        }
+    }
+    
+    func simulatePaste() {
+        // Simulate pressing Cmd+V to paste
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let source = CGEventSource(stateID: .combinedSessionState)
+            
+            // Create a keyboard event for Command+V (paste)
+            let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)  // 'V' key
+            keyVDown?.flags = .maskCommand
+            
+            let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
+            keyVUp?.flags = .maskCommand
+            
+            // Post the events
+            keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
+            keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
+        }
+    }
+    
+    // MARK: - Persistence
+    
+    private func saveItems() {
+        // Convert to Data and save
+        if let encoded = try? JSONEncoder().encode(items) {
+            UserDefaults.standard.set(encoded, forKey: "savedClipboardItems")
+        }
+    }
+    
+    private func loadItems() {
+        // Retrieve and decode data
+        if let savedItems = UserDefaults.standard.object(forKey: "savedClipboardItems") as? Data {
+            if let decodedItems = try? JSONDecoder().decode([ClipboardItem].self, from: savedItems) {
+                items = decodedItems
+            }
+        }
+    }
+    
+    // MARK: - Search
+    
+    func searchItems(query: String) -> [ClipboardItem] {
+        if query.isEmpty {
+            return items
+        }
+        
+        return items.filter { $0.text.localizedCaseInsensitiveContains(query) }
+    }
+}
+
+struct ClipboardItem: Identifiable, Codable, Equatable {
+    var id = UUID()
+    var text: String
+    var timestamp: Date
+    var isPinned: Bool = false
+    
+    static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
+        return lhs.id == rhs.id
     }
 }
