@@ -119,17 +119,60 @@ class ClipboardOverlayManager: NSObject {
 }
 
 struct PreferencesView: View {
+    // Create a state object for our manager.
+    @StateObject private var launchAtLoginManager = LaunchAtLoginManager()
+    @StateObject private var accessibilityManager = AccessibilityManager()
+    
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Keyboard Shortcut")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 25) {
             
-            KeyboardShortcuts.Recorder(for: .showClipboardOverlay)
-                .padding()
+            // Section for General Settings
+            VStack(alignment: .leading) {
+                Text("General")
+                    .font(.headline)
+                    .padding(.bottom, 5)
+                
+                // Use the manager's isEnabled property for the toggle.
+                Toggle("Launch at Login", isOn: $launchAtLoginManager.isEnabled)
+                    .toggleStyle(.switch) // A nicer looking toggle
+            }
             
+            // Section for Keyboard Shortcut
+            VStack(alignment: .leading) {
+                Text("Keyboard Shortcut")
+                    .font(.headline)
+                
+                KeyboardShortcuts.Recorder(for: .showClipboardOverlay)
+            }
+            
+            VStack(alignment: .leading) {
+                Text("Permissions")
+                    .font(.headline)
+                    .padding(.bottom, 5)
+                
+                HStack {
+                    Text("Auto-Paste (Accessibility)")
+                    Spacer()
+                    if accessibilityManager.isGranted {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("Allowed")
+                        }
+                        .foregroundColor(.green)
+                    } else {
+                        Button("Grant Access...") {
+                            accessibilityManager.requestPermission()
+                        }
+                    }
+                }
+                .padding(.top, 5)
+            }
             Spacer()
         }
         .padding()
-        .frame(width: 300, height: 150)
+        .frame(width: 400, height: 250)
+        .onAppear {
+            accessibilityManager.checkPermission()
+        }
     }
 }

@@ -6,8 +6,11 @@ class ClipboardManager: ObservableObject {
     @Published var items: [ClipboardItem] = []
     private var timer: Timer?
     private let maxItems = 100
+    
     private var lastCopiedString: String = ""
     private var pasteboardChangeCount = NSPasteboard.general.changeCount
+    
+    private var lastChangeCount = NSPasteboard.general.changeCount
     
     init() {
         // Load any saved items
@@ -32,66 +35,102 @@ class ClipboardManager: ObservableObject {
     func checkClipboard() {
         let pasteboard = NSPasteboard.general
         
-        // Only process if the pasteboard has changed
-        if pasteboard.changeCount != pasteboardChangeCount {
-            pasteboardChangeCount = pasteboard.changeCount
-            
-            if let string = pasteboard.string(forType: .string) {
-                // Don't add duplicate of the most recent item
-                if !items.isEmpty && items[0].text == string && !items[0].isPinned {
-                    return
-                }
-                
-                // Don't add empty strings
-                if string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    return
-                }
-                
-                // Don't add if it's the same as what we just copied programmatically
-                if string == lastCopiedString {
-                    lastCopiedString = ""
-                    return
-                }
-                
-                // Add new item at the beginning
-                let newItem = ClipboardItem(text: string, timestamp: Date())
-                addItem(newItem)
+        guard pasteboard.changeCount != lastChangeCount else {
+            return
+        }
+        
+        // First, check for images (as they can also have string representations)
+        if let imageData = pasteboard.data(forType: .tiff) ?? pasteboard.data(forType: .png) {
+            // Avoid adding duplicates
+            if let lastItem = items.first, lastItem.type == .image, lastItem.content == imageData {
+                lastChangeCount = pasteboard.changeCount
+                return
             }
+            
+            let newItem = ClipboardItem(imageData: imageData)
+            addItem(newItem)
+            lastChangeCount = pasteboard.changeCount
+            
+            // Then, check for strings
+        } else if let string = pasteboard.string(forType: .string), !string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            // Avoid adding duplicates
+            if let lastItem = items.first, lastItem.text == string {
+                lastChangeCount = pasteboard.changeCount
+                return
+            }
+            
+            let newItem = ClipboardItem(text: string)
+            addItem(newItem)
+            lastChangeCount = pasteboard.changeCount
         }
     }
     
     func addItem(_ item: ClipboardItem) {
-        // Remove existing unpinned duplicate if any
-        if let existingIndex = items.firstIndex(where: { $0.text == item.text && !$0.isPinned }) {
+        // Prevent adding exact duplicates unless pinned
+        if let existingIndex = items.firstIndex(where: { $0.content == item.content && !$0.isPinned }) {
             items.remove(at: existingIndex)
         }
         
-        // Add at beginning
         items.insert(item, at: 0)
         
         // Limit total number of items
         while items.count > maxItems {
-            // Find the last unpinned item to remove
             if let lastUnpinnedIndex = items.lastIndex(where: { !$0.isPinned }) {
                 items.remove(at: lastUnpinnedIndex)
             } else {
-                // All items are pinned, so remove the last pinned item
-                items.removeLast()
+                items.removeLast() // All items are pinned, remove the oldest
             }
         }
         
-        // Save after change
-        saveItems()
-    }
-    
-    func clearHistory() {
-        // Remove all unpinned items
-        items.removeAll(where: { !$0.isPinned })
         saveItems()
     }
     
     func setClipboard(_ item: ClipboardItem) {
-        setClipboard(item.text)
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        
+        var success = false
+        switch item.type {
+        case .text:
+            if let text = item.text {
+                success = pasteboard.setString(text, forType: .string)
+            }
+        case .image:
+            // Set multiple image types for better compatibility
+            success = pasteboard.setData(item.content, forType: .tiff)
+            pasteboard.setData(item.content, forType: .png)
+        }
+        
+        if success {
+            // Move the copied item to the top of the list
+            if let index = items.firstIndex(of: item) {
+                items.remove(at: index)
+                items.insert(item, at: 0)
+                saveItems()
+            }
+        }
+    }
+    @objc func clearHistory() {
+        let alert = NSAlert()
+        alert.messageText = "Clear Clipboard History?"
+        alert.informativeText = "Are you sure you want to delete all unpinned items? This action cannot be undone."
+        alert.alertStyle = .warning
+        
+        alert.addButton(withTitle: "Clear")
+        alert.addButton(withTitle: "Cancel")
+        
+        let response = alert.runModal()
+        
+        if response == .alertFirstButtonReturn {
+            DispatchQueue.main.async {
+                // Remove all unpinned items
+                self.items.removeAll(where: { !$0.isPinned })
+                self.saveItems()
+                print("Unpinned clipboard history cleared by user confirmation.")
+            }
+        } else {
+            print("User cancelled the clear history action.")
+        }
     }
     
     func setClipboard(_ text: String) {
@@ -163,17 +202,15 @@ class ClipboardManager: ObservableObject {
             return items
         }
         
-        return items.filter { $0.text.localizedCaseInsensitiveContains(query) }
-    }
-}
-
-struct ClipboardItem: Identifiable, Codable, Equatable {
-    var id = UUID()
-    var text: String
-    var timestamp: Date
-    var isPinned: Bool = false
-    
-    static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
-        return lhs.id == rhs.id
+        return items.filter {
+            if $0.type == .text {
+                return $0.text?.localizedCaseInsensitiveContains(query) ?? false
+            }
+            // You could also allow searching for "image"
+            if "image".localizedCaseInsensitiveContains(query) && $0.type == .image {
+                return true
+            }
+            return false
+        }
     }
 }

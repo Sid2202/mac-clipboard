@@ -1,43 +1,9 @@
-////
-////  ContentView.swift
-////  clipboard
-////
-////  Created by Sidhanti Patil on 04/05/25.
-////
 //
-//import SwiftUI
+//  ContentView.swift
+//  clipboard
 //
-//struct ContentView: View {
-//    @EnvironmentObject var clipboardManager: ClipboardManager
-//    
-//    var body: some View {
-//        VStack(alignment: .leading) {
-//            
-//            Text("Clipboard History")
-//                .font(.title)
-//                .padding(.bottom, 10)
-//            
-//            List(clipboardManager.items) { item in
-//                Button(action: {
-//                    clipboardManager.setClipboard(item.text)
-//                    clipboardManager.simulatePaste()
-//                }) {
-//                    Text(item.text)
-//                        .lineLimit(1)
-//                        .truncationMode(.tail)
-//                }
-//            }
-//        }
-//        .padding()
-//        .frame(width:400, height:300)
-//    }
-//}
-////
-////#Preview {
-////    ContentView()
-////}
-
-
+//  Created by Sidhanti Patil on 04/05/25.
+//
 import SwiftUI
 
 struct ContentView: View {
@@ -251,9 +217,27 @@ struct ClipboardItemCard: View {
                 }
             }
             
+            // Preview Icon (Text or Image)
+            switch item.type {
+            case .image:
+                if let nsImage = item.image {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 32, height: 32)
+                        .cornerRadius(4)
+                }
+            case .text:
+                Image(systemName: "doc.text")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color.white.opacity(0.7))
+                    .frame(width: 32, height: 32)
+            }
+
             // Text content
             VStack(alignment: .leading, spacing: 3) {
-                Text(displayText(item.text))
+                // THE FIX: Use item.preview which is guaranteed to be a String
+                Text(item.preview)
                     .lineLimit(1)
                     .truncationMode(.tail)
                     .foregroundColor(.white)
@@ -281,8 +265,8 @@ struct ClipboardItemCard: View {
                 .opacity(isHovered || item.isPinned ? 1 : 0)
                 
                 Button(action: {
+                    // This button should just copy, not paste, in this view
                     clipboardManager.setClipboard(item)
-                    clipboardManager.simulatePaste()
                 }) {
                     Text("Copy")
                         .font(.system(size: 12, weight: .medium))
@@ -316,14 +300,6 @@ struct ClipboardItemCard: View {
             }
         }
     }
-    
-    private func displayText(_ text: String) -> String {
-        // Remove excessive whitespace and newlines for display
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let withoutNewlines = trimmed.replacingOccurrences(of: "\n", with: " ")
-        return withoutNewlines
-    }
-    
     func timeAgo(from date: Date) -> String {
         let calendar = Calendar.current
         let now = Date()

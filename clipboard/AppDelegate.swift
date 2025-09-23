@@ -14,6 +14,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayManager: ClipboardOverlayManager?
     private var statusItem: NSStatusItem?
     private var cancellables = Set<AnyCancellable>()
+    private var preferencesWindowController: NSWindowController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("App is launching...")
@@ -53,7 +54,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         menu.addItem(NSMenuItem(title: "Show Clipboard", action: #selector(showOverlay), keyEquivalent: ""))
         menu.addItem(NSMenuItem(title: "Clear History", action: #selector(clearClipboardHistory), keyEquivalent: ""))
-        // menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
+        menu.addItem(NSMenuItem(title: "Preferences", action: #selector(showPreferences), keyEquivalent: ","))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
@@ -70,17 +71,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     @objc func showPreferences() {
-        let prefWindow = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 300, height: 150),
+        // If the window already exists, just bring it to the front.
+        if let windowController = preferencesWindowController, windowController.window?.isVisible == true {
+            windowController.window?.makeKeyAndOrderFront(nil)
+            return
+        }
+        
+        // Create the view and the manager for it
+        let preferencesView = PreferencesView()
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 400, height: 200), // Increased size
             styleMask: [.titled, .closable, .miniaturizable],
             backing: .buffered,
             defer: false
         )
+        window.center()
+        window.title = "Clipboard Preferences"
+        window.contentView = NSHostingView(rootView: preferencesView)
         
-        let prefView = PreferencesView()
-        prefWindow.contentView = NSHostingView(rootView: prefView)
-        prefWindow.center()
-        prefWindow.title = "Clipboard Preferences"
-        prefWindow.makeKeyAndOrderFront(nil)
+        let windowController = NSWindowController(window: window)
+        windowController.showWindow(nil)
+        
+        // Keep a strong reference to the window controller
+        self.preferencesWindowController = windowController
     }
 }
