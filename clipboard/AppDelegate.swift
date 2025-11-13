@@ -17,7 +17,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var preferencesWindowController: NSWindowController?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
-        print("App is launching...")
         
         // Set the app to be an accessory app (menu bar only)
         NSApp.setActivationPolicy(.accessory)
@@ -32,23 +31,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // DISABLES MENUBAR ICON
         // NSApplication.shared.windows.forEach { $0.close() }
         
-        print("App launch complete")
     }
     
     // Move the status item setup to AppDelegate
     private func setupStatusItem() {
-        print("Creating status item in AppDelegate...")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
         if let button = statusItem?.button {
-            print("Button exists, setting up...")
             
             // Try text instead of image first
             button.title = "📋"
             
-            print("Button title set to CL")
-        } else {
-            print("Failed to get button from status item")
         }
         
         let menu = NSMenu()
@@ -59,7 +52,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         
         statusItem?.menu = menu
-        print("Menu assigned to status item in AppDelegate")
     }
     
     @objc func showOverlay() {

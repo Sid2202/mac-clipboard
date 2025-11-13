@@ -1,43 +1,6 @@
 import SwiftUI
 import AppKit
 
-// Add hex color extension
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue:  Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-}
-
-// Define color palette
-extension Color {
-    static let accentBlue = Color(hex: "007AFF")
-    static let accentRed = Color(hex: "FF3B30")
-    static let subtleBackground = Color(hex: "1C1C1E")
-    static let darkBackground = Color(hex: "121214")
-    static let cardBackground = Color(hex: "2C2C2E")
-}
-
 // A more subtle glass effect
 struct GlassEffect: ViewModifier {
     var intensity: Double = 1.0
@@ -76,83 +39,70 @@ struct BlurEffectView: NSViewRepresentable {
     }
 }
 
-// Elegant button style
-struct ElegantButtonStyle: ButtonStyle {
-    var color: Color = .accentBlue
-    var isOutlined: Bool = false
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                isOutlined ?
-                    Color.clear :
-                    color.opacity(configuration.isPressed ? 0.8 : 1.0)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(color, lineWidth: isOutlined ? 1 : 0)
-                    .opacity(isOutlined ? (configuration.isPressed ? 0.6 : 0.8) : 0)
-            )
-            .foregroundColor(isOutlined ? color : .white)
-            .cornerRadius(6)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
-// A custom view that handles text highlighting
 struct HighlightedTextView: View {
     let text: String
     let highlight: String
     
     var body: some View {
-        let components = highlightComponents()
-        
-        return HStack(spacing: 0) {
-            ForEach(Array(components.enumerated()), id: \.offset) { index, component in
-                Text(component.text)
-                    .foregroundColor(component.isHighlighted ? .black : .white)
-                    .font(.system(size: 14, weight: component.isHighlighted ? .medium : .regular))
-                    .background(component.isHighlighted ? Color.accentBlue.opacity(0.7) : Color.clear)
-            }
-        }
-    }
-    
-    struct TextComponent {
-        let text: String
-        let isHighlighted: Bool
-    }
-    
-    private func highlightComponents() -> [TextComponent] {
-        var components: [TextComponent] = []
-        let lowercaseText = text.lowercased()
-        let lowercaseHighlight = highlight.lowercased()
-        
-        var currentIndex = text.startIndex
-        
-        while currentIndex < text.endIndex {
-            if let range = lowercaseText[currentIndex...].range(of: lowercaseHighlight) {
-                if range.lowerBound > currentIndex {
-                    let beforeText = String(text[currentIndex..<range.lowerBound])
-                    components.append(TextComponent(text: beforeText, isHighlighted: false))
-                }
-                
-                let highlightedText = String(text[range])
-                components.append(TextComponent(text: highlightedText, isHighlighted: true))
-                
-                currentIndex = range.upperBound
-            } else {
-                let remainingText = String(text[currentIndex...])
-                components.append(TextComponent(text: remainingText, isHighlighted: false))
-                break
-            }
-        }
-        
-        return components
+        Text(text)
+            .lineLimit(2)
+            .truncationMode(.tail)
+            .foregroundColor(.white)
+            .font(.system(size: 14))
     }
 }
+
+// A custom view that handles text highlighting
+//struct HighlightedTextView: View {
+//    let text: String
+//    let highlight: String
+//    
+//    var body: some View {
+//        let components = highlightComponents()
+//        
+//        return HStack(spacing: 0) {
+//            ForEach(Array(components.enumerated()), id: \.offset) { index, component in
+//                Text(component.text)
+//                    .foregroundColor(component.isHighlighted ? .black : .white)
+//                    .font(.system(size: 14, weight: component.isHighlighted ? .medium : .regular))
+//                    .background(component.isHighlighted ? Color.accentBlue.opacity(0.7) : Color.clear)
+//            }
+//        }
+//    }
+//    
+//    struct TextComponent {
+//        let text: String
+//        let isHighlighted: Bool
+//    }
+//    
+//    private func highlightComponents() -> [TextComponent] {
+//        var components: [TextComponent] = []
+//        let lowercaseText = text.lowercased()
+//        let lowercaseHighlight = highlight.lowercased()
+//        
+//        var currentIndex = text.startIndex
+//        
+//        while currentIndex < text.endIndex {
+//            if let range = lowercaseText[currentIndex...].range(of: lowercaseHighlight) {
+//                if range.lowerBound > currentIndex {
+//                    let beforeText = String(text[currentIndex..<range.lowerBound])
+//                    components.append(TextComponent(text: beforeText, isHighlighted: false))
+//                }
+//                
+//                let highlightedText = String(text[range])
+//                components.append(TextComponent(text: highlightedText, isHighlighted: true))
+//                
+//                currentIndex = range.upperBound
+//            } else {
+//                let remainingText = String(text[currentIndex...])
+//                components.append(TextComponent(text: remainingText, isHighlighted: false))
+//                break
+//            }
+//        }
+//        
+//        return components
+//    }
+//}
 
 // MARK: - Main ClipboardOverlayView
 
@@ -195,16 +145,25 @@ struct ClipboardOverlayView: View {
             
             copiedIndicatorView
         }
-        .frame(width: 360, height: min(550, CGFloat(filteredItems.count * 55) + 80)) // Dynamic height
+        .frame(width: 360, height: min(550, CGFloat(filteredItems.count * 55) + 80))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 5)
         .preferredColorScheme(.dark)
         .onAppear(perform: setupView)
-        .onChange(of: searchText) { _ in selectedIndex = 0 } // Reset selection on search
-        .alert("Permission Required", isPresented: $showAccessibilityAlert, actions: accessibilityAlertButtons)
+        .onChange(of: searchText) {
+            selectedIndex = 0
+        }
+        .alert("Accessibility Permission Required", isPresented: $showAccessibilityAlert) {
+            Button("Open System Settings") {
+                accessibilityManager.openSystemPreferences()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This app needs Accessibility permission to paste content. Please enable 'clipboard' in System Settings > Privacy & Security > Accessibility.")
+        }
         .alert("Maximum Pins Reached", isPresented: $showMaxPinsAlert, actions: { Button("OK") {} }, message: { Text("You can pin up to 5 items.") })
-        // --- NEW: This modifier captures all key presses for navigation ---
-        .onKeyPress(keys: [.upArrow, .downArrow, .return]) { press in
+        // Key event handling
+        .onKeyPress(keys: [.upArrow, .downArrow, .return, .escape]) { press in
             handleKeyPress(press)
             return .handled
         }
@@ -219,10 +178,17 @@ struct ClipboardOverlayView: View {
                 .textFieldStyle(PlainTextFieldStyle())
                 .foregroundColor(.white)
                 .focused($isSearchFocused)
-                .onSubmit { selectAndCopy(at: selectedIndex) } // Pressing Enter in search bar also copies
+                .onSubmit {
+                    if !filteredItems.isEmpty {
+                        selectAndCopy(at: selectedIndex)
+                    }
+                }
             
             if !searchText.isEmpty {
-                Button(action: { searchText = "" }) {
+                Button(action: {
+                    searchText = ""
+                    isSearchFocused = true
+                }) {
                     Image(systemName: "xmark.circle.fill").foregroundColor(Color.white.opacity(0.5))
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -237,20 +203,19 @@ struct ClipboardOverlayView: View {
         if filteredItems.isEmpty {
             emptyStateView
         } else {
-            // --- NEW: ScrollViewReader allows programmatic scrolling ---
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(filteredItems.indices, id: \.self) { index in
                             let item = filteredItems[index]
                             clipboardItemView(item, index: index)
-                                .id(index) // Assign an ID for scrolling
+                                .id(index)
                         }
                     }
                 }
-                .onChange(of: selectedIndex) { newIndex in
+                .onChange(of: selectedIndex) { oldValue, newValue in
                     withAnimation(.easeOut(duration: 0.2)) {
-                        proxy.scrollTo(newIndex, anchor: .center) // Auto-scroll to selection
+                        proxy.scrollTo(newValue, anchor: .center)
                     }
                 }
             }
@@ -297,57 +262,7 @@ struct ClipboardOverlayView: View {
         }
     }
     
-    private func selectFirstItemIfPossible() {
-        if !filteredItems.isEmpty {
-            let firstItem = filteredItems[0]
-//            clipboardManager.setClipboard(firstItem)
-//            selectedItem = firstItem
-//            
-//            withAnimation {
-//                showCopiedIndicator = true
-//            }
-            performCopyAndPaste(for: firstItem)
-        }
-    }
-    
     // MARK: - Helper Views & Functions
-        
-    private func itemTypeIcon(for item: ClipboardItem) -> some View {
-        Group {
-            if let nsImage = item.image {
-                Image(nsImage: nsImage)
-                    .resizable().aspectRatio(contentMode: .fill)
-                    .frame(width: 32, height: 32).cornerRadius(4)
-            } else {
-                Image(systemName: "doc.text.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(Color.white.opacity(0.7))
-                    .frame(width: 32, height: 32)
-            }
-        }
-    }
-    
-    private func itemPreviewText(for item: ClipboardItem) -> some View {
-        Group {
-            if item.type == .text && !searchText.isEmpty {
-                HighlightedTextView(text: item.preview, highlight: searchText).lineLimit(1)
-            } else {
-                Text(item.preview).lineLimit(1).truncationMode(.tail)
-                    .foregroundColor(.white).font(.system(size: 14))
-            }
-        }
-    }
-    
-    private func pinButton(for item: ClipboardItem, isHovered: Bool) -> some View {
-        Button(action: { togglePin(for: item) }) {
-            Image(systemName: item.isPinned ? "pin.fill" : "pin")
-                .font(.system(size: 12))
-                .foregroundColor(item.isPinned ? .accentRed : .white)
-                .frame(width: 24, height: 24)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .opacity(isHovered || item.isPinned ? 0.7 : 0)
-    }
     
     @ViewBuilder
     private func accessibilityAlertButtons() -> some View {
@@ -363,12 +278,12 @@ struct ClipboardOverlayView: View {
     private func setupView() {
         accessibilityManager.checkPermission()
         selectedIndex = 0
+        // Auto-focus the search field
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             isSearchFocused = true
         }
     }
     
-    // --- NEW: Central function for handling key presses ---
     private func handleKeyPress(_ press: KeyPress) {
         guard !filteredItems.isEmpty else { return }
         
@@ -379,6 +294,8 @@ struct ClipboardOverlayView: View {
             selectedIndex = (selectedIndex - 1 + filteredItems.count) % filteredItems.count
         case .return:
             selectAndCopy(at: selectedIndex)
+        case .escape:
+            onDismiss()
         default:
             break
         }
@@ -387,8 +304,6 @@ struct ClipboardOverlayView: View {
     private func selectAndCopy(at index: Int) {
         guard filteredItems.indices.contains(index) else { return }
         let item = filteredItems[index]
-        
-        // Update selection state and perform the copy/paste
         selectedIndex = index
         performCopyAndPaste(for: item)
     }
@@ -396,16 +311,23 @@ struct ClipboardOverlayView: View {
     private func performCopyAndPaste(for item: ClipboardItem) {
         clipboardManager.setClipboard(item)
         
-        withAnimation { showCopiedIndicator = true }
-        
-        accessibilityManager.checkPermission() // Re-check just in case
-        if accessibilityManager.isGranted {
-            clipboardManager.simulatePaste()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                onDismiss()
+        DispatchQueue.main.async {
+            // Re-check permission status
+            self.accessibilityManager.checkPermission()
+            
+            if self.accessibilityManager.isGranted {
+                withAnimation {
+                    self.showCopiedIndicator = true
+                }
+                
+                self.clipboardManager.simulatePaste()
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    self.onDismiss()
+                }
+            } else {
+                self.showAccessibilityAlert = true
             }
-        } else {
-            showAccessibilityAlert = true
         }
     }
     
@@ -419,107 +341,114 @@ struct ClipboardOverlayView: View {
     
     private func timeAgo(from date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
+        formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
     }
     
     private func clipboardItemView(_ item: ClipboardItem, index: Int) -> some View {
         let isHovered = hoveredIndex == index
-        let isSelected = selectedItem?.id == item.id
+        let isSelected = selectedIndex == index
+        let hasMatch = !searchText.isEmpty && item.preview.lowercased().contains(searchText.lowercased())
         
         return HStack(spacing: 12) {
-            // Left side with icon and text
-            HStack(spacing: 12) {
-                // Status icon
-                switch item.type {
-                case .image:
-                    if let nsImage = item.image {
-                        Image(nsImage: nsImage)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 32, height: 32)
-                            .cornerRadius(4)
-                    }
-                case .text:
-                    Image(systemName: "doc.text")
-                        .font(.system(size: 16))
-                        .foregroundColor(Color.white.opacity(0.7))
-                        .frame(width: 32, height: 32)
+            // Icon
+            switch item.type {
+            case .image:
+                if let nsImage = item.image {
+                    Image(nsImage: nsImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 36, height: 36)
+                        .cornerRadius(6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                        )
                 }
-                // Text content
-                VStack(alignment: .leading, spacing: 3) {
-                    if item.type == .text && !searchText.isEmpty {
-                        HighlightedTextView(text: item.preview, highlight: searchText)
-                            .lineLimit(1)
-                    } else {
-                        Text(item.preview)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .foregroundColor(.white)
-                            .font(.system(size: 14))
+            case .text:
+                ZStack {
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.white.opacity(0.06))
+                    
+                    Image(systemName: hasMatch ? "doc.text.magnifyingglass" : "doc.text")
+                        .font(.system(size: 16))
+                        .foregroundColor(hasMatch ? Color.accentBlue : Color.white.opacity(0.6))
+                }
+                .frame(width: 36, height: 36)
+            }
+            
+            // Text content
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.preview)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .foregroundColor(.white)
+                    .font(.system(size: 14))
+                
+                HStack(spacing: 6) {
+                    Text(timeAgo(from: item.timestamp))
+                        .font(.system(size: 11))
+                        .foregroundColor(Color.white.opacity(0.4))
+                    
+                    if item.isPinned {
+                        HStack(spacing: 2) {
+                            Image(systemName: "pin.fill")
+                                .font(.system(size: 8))
+                            Text("Pinned")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(Color.accentRed.opacity(0.8))
                     }
                     
-                    Text(timeAgo(from: item.timestamp))
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.white.opacity(0.5))
+                    // Match indicator
+                    if hasMatch {
+                        HStack(spacing: 2) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 8))
+                            Text("Match")
+                                .font(.system(size: 10, weight: .medium))
+                        }
+                        .foregroundColor(Color.accentBlue.opacity(0.8))
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             
-            // Right side with buttons
-            HStack(spacing: 8) {
-                // Pin/Unpin button
-                Button(action: {
-                    if !item.isPinned && clipboardManager.items.filter({ $0.isPinned }).count >= 5 {
-                        showMaxPinsAlert = true
-                        return
-                    }
-                    clipboardManager.togglePin(for: item)
-                }) {
-                    Image(systemName: item.isPinned ? "pin.slash" : "pin")
-                        .font(.system(size: 11))
-                        .foregroundColor(item.isPinned ? Color.accentRed.opacity(0.8) : Color.white.opacity(0.6))
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(PlainButtonStyle())
-                .opacity(isHovered || item.isPinned ? 1 : 0)
-                .onHover { isHovered in
-                    if isHovered {
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
-                
-                // Copy button
-                Button(action: {
-                    performCopyAndPaste(for: item)
-                }) {
-                    Text("Copy")
-                        .font(.system(size: 12, weight: .medium))
-                }
-                .buttonStyle(ElegantButtonStyle(color: .accentBlue))
-                .opacity(isHovered ? 1 : 0.5)
-                .onHover { isHovered in
-                    if isHovered {
-                        NSCursor.pointingHand.set()
-                    } else {
-                        NSCursor.arrow.set()
-                    }
-                }
+            Spacer()
+            
+            // Pin button (only visible on hover or if pinned)
+            Button(action: {
+                togglePin(for: item)
+            }) {
+                Image(systemName: item.isPinned ? "pin.slash" : "pin")
+                    .font(.system(size: 12))
+                    .foregroundColor(item.isPinned ? Color.accentRed.opacity(0.8) : Color.white.opacity(0.5))
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(isHovered ? 0.08 : 0))
+                    )
+                    .contentShape(Circle())
             }
+            .buttonStyle(PlainButtonStyle())
+            .opacity(isHovered || item.isPinned ? 1 : 0)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .background(
             Group {
                 if isSelected {
-                    Color.accentBlue.opacity(0.1)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.accentBlue.opacity(0.15))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.accentBlue.opacity(0.3), lineWidth: 1)
+                        )
                 } else if isHovered {
-                    Color.white.opacity(0.04)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.05))
                 } else if item.isPinned {
-                    Color.accentRed.opacity(0.05)
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.accentRed.opacity(0.04))
                 } else {
                     Color.clear
                 }
@@ -532,106 +461,10 @@ struct ClipboardOverlayView: View {
             }
         }
         .onTapGesture {
-            clipboardManager.setClipboard(item)
-            selectedItem = item
-            
-            withAnimation {
-                showCopiedIndicator = true
-            }
+            selectedIndex = index
+            performCopyAndPaste(for: item)
         }
-    }
-    
-    private func displayText(_ text: String) -> String {
-        // Remove excessive whitespace and newlines for display
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let withoutNewlines = trimmed.replacingOccurrences(of: "\n", with: " ")
-        return withoutNewlines
-    }
-}
-    
-private func highlightedText(original: String, highlight: String) -> some View {
-    return HighlightedTextView(text: original, highlight: highlight)
-}
-
-// A custom focusable TextField that can receive keyboard focus
-struct FocusableTextField: NSViewRepresentable {
-    var placeholder: String
-    @Binding var text: String
-    @Binding var isFocused: Bool
-    var onCommit: () -> Void = {}
-    
-    class Coordinator: NSObject, NSTextFieldDelegate {
-        var parent: FocusableTextField
-        
-        init(_ parent: FocusableTextField) {
-            self.parent = parent
-        }
-        
-        func controlTextDidChange(_ obj: Notification) {
-            guard let textField = obj.object as? NSTextField else { return }
-            DispatchQueue.main.async {
-                self.parent.text = textField.stringValue
-            }
-        }
-        
-        func controlTextDidEndEditing(_ obj: Notification) {
-            DispatchQueue.main.async {
-                self.parent.isFocused = false
-            }
-        }
-        
-        func controlTextDidBeginEditing(_ obj: Notification) {
-            DispatchQueue.main.async {
-                self.parent.isFocused = true
-            }
-        }
-        
-        func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-            if commandSelector == #selector(NSResponder.insertNewline(_:)) {
-                parent.onCommit()
-                return true
-            }
-            return false
-        }
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        return Coordinator(self)
-    }
-    
-    func makeNSView(context: Context) -> NSTextField {
-        let textField = NSTextField()
-        textField.placeholderString = placeholder
-        textField.stringValue = text
-        textField.delegate = context.coordinator
-        
-        // Styling
-        textField.backgroundColor = .clear
-        textField.isBordered = false
-        textField.focusRingType = .none
-        textField.textColor = .white
-        textField.drawsBackground = false
-        
-        // Make sure it's editable and selectable
-        textField.isEditable = true
-        textField.isSelectable = true
-        
-        // Set appropriate font
-        textField.font = NSFont.systemFont(ofSize: 14)
-        
-        return textField
-    }
-    
-    func updateNSView(_ nsView: NSTextField, context: Context) {
-        // Only update if there's a real change to avoid focus issues
-        if nsView.stringValue != text {
-            nsView.stringValue = text
-        }
-        
-        if isFocused && nsView.window?.firstResponder != nsView {
-            DispatchQueue.main.async {
-                nsView.window?.makeFirstResponder(nsView)
-            }
-        }
+        .animation(.easeInOut(duration: 0.15), value: isSelected)
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 }

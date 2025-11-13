@@ -5,19 +5,29 @@ import Combine
 class ClipboardManager: ObservableObject {
     @Published var items: [ClipboardItem] = []
     private var timer: Timer?
-    private let maxItems = 100
+    private var cleanupTimer: Timer?
+    private let maxItems = 20
     
     private var lastCopiedString: String = ""
     private var pasteboardChangeCount = NSPasteboard.general.changeCount
     
     private var lastChangeCount = NSPasteboard.general.changeCount
     
+    private let imageRetentionHours: Double = 10
+    private let textRetentionDays: Double = 3
+    
     init() {
-        // Load any saved items
+        /// Load any saved items
         loadItems()
+        
+        // Clean up old items on launch
+        cleanupOldItems()
         
         // Start monitoring clipboard
         startMonitoring()
+        
+        // Start cleanup timer (runs every hour)
+        startCleanupTimer()
     }
     
     func startMonitoring() {
@@ -30,6 +40,41 @@ class ClipboardManager: ObservableObject {
     func stopMonitoring() {
         timer?.invalidate()
         timer = nil
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
+    }
+    
+    func startCleanupTimer() {
+        // Run cleanup every hour
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in
+            self?.cleanupOldItems()
+        }
+    }
+    
+    func cleanupOldItems() {
+        let now = Date()
+        let imageRetentionSeconds = imageRetentionHours * 3600
+        let textRetentionSeconds = textRetentionDays * 24 * 3600
+        
+        items.removeAll { item in
+            // Never remove pinned items
+            if item.isPinned {
+                return false
+            }
+            
+            let age = now.timeIntervalSince(item.timestamp)
+            
+            switch item.type {
+            case .image:
+                // Remove images older than 10 hours
+                return age > imageRetentionSeconds
+            case .text:
+                // Remove text older than 3 days
+                return age > textRetentionSeconds
+            }
+        }
+        
+        saveItems()
     }
     
     func checkClipboard() {
@@ -126,10 +171,7 @@ class ClipboardManager: ObservableObject {
                 // Remove all unpinned items
                 self.items.removeAll(where: { !$0.isPinned })
                 self.saveItems()
-                print("Unpinned clipboard history cleared by user confirmation.")
             }
-        } else {
-            print("User cancelled the clear history action.")
         }
     }
     

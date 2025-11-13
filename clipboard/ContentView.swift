@@ -236,7 +236,6 @@ struct ClipboardItemCard: View {
 
             // Text content
             VStack(alignment: .leading, spacing: 3) {
-                // THE FIX: Use item.preview which is guaranteed to be a String
                 Text(item.preview)
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -265,7 +264,6 @@ struct ClipboardItemCard: View {
                 .opacity(isHovered || item.isPinned ? 1 : 0)
                 
                 Button(action: {
-                    // This button should just copy, not paste, in this view
                     clipboardManager.setClipboard(item)
                 }) {
                     Text("Copy")
@@ -300,6 +298,7 @@ struct ClipboardItemCard: View {
             }
         }
     }
+    
     func timeAgo(from date: Date) -> String {
         let calendar = Calendar.current
         let now = Date()
