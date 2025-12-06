@@ -35,13 +35,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // Move the status item setup to AppDelegate
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+//        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+
         
         if let button = statusItem?.button {
             
             // Try text instead of image first
-            button.title = "📋"
-            
+//            button.title = "📋"
+            button.image = NSImage(named: "StatusBarIcon")
+            button.image?.isTemplate = true
         }
         
         let menu = NSMenu()

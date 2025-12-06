@@ -224,23 +224,139 @@ struct ClipboardOverlayView: View {
     
     @ViewBuilder
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: searchText.isEmpty ? "clipboard" : "magnifyingglass")
-                .font(.system(size: 32))
-                .foregroundColor(Color.white.opacity(0.3))
-            
-            Text(searchText.isEmpty ? "Clipboard is Empty" : "No Results for \"\(searchText)\"")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(Color.white.opacity(0.7))
-            
-            if searchText.isEmpty {
-                Text("Items you copy will appear here.")
+        if searchText.isEmpty {
+            // Empty clipboard state
+            VStack(spacing: 20) {
+                // Animated icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.accentBlue.opacity(0.1), Color.accentBlue.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 80, height: 80)
+                    
+                    Image(systemName: "clipboard")
+                        .font(.system(size: 36, weight: .light))
+                        .foregroundColor(Color.accentBlue.opacity(0.6))
+                }
+                
+                VStack(spacing: 8) {
+                    Text("No Clipboard History Yet")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text("Copy something to get started")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color.white.opacity(0.6))
+                }
+                
+                // Quick tips
+                VStack(alignment: .leading, spacing: 12) {
+                    QuickTipRow(
+                        icon: "command",
+                        text: "Press ⌘C to copy"
+                    )
+                    
+                    QuickTipRow(
+                        icon: "arrow.up.arrow.down",
+                        text: "Use ↑↓ to navigate history"
+                    )
+                    
+                    QuickTipRow(
+                        icon: "pin.fill",
+                        text: "Pin important items to keep them"
+                    )
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white.opacity(0.03))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        )
+                )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 32)
+            .padding(.vertical, 40)
+        } else {
+            // No search results state
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.05))
+                        .frame(width: 70, height: 70)
+                    
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 32, weight: .light))
+                        .foregroundColor(Color.white.opacity(0.4))
+                }
+                
+                VStack(spacing: 6) {
+                    Text("No Results")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    
+                    Text("No items match \"\(searchText)\"")
+                        .font(.system(size: 13))
+                        .foregroundColor(Color.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                }
+                
+                Button(action: {
+                    searchText = ""
+                    isSearchFocused = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "xmark.circle")
+                            .font(.system(size: 12))
+                        Text("Clear Search")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundColor(.accentBlue)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.accentBlue.opacity(0.12))
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.vertical, 40)
+        }
+    }
+
+    // Add this helper view
+    struct QuickTipRow: View {
+        let icon: String
+        let text: String
+        
+        var body: some View {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(.accentBlue.opacity(0.7))
+                    .frame(width: 24, height: 24)
+                    .background(
+                        Circle()
+                            .fill(Color.accentBlue.opacity(0.1))
+                    )
+                
+                Text(text)
                     .font(.system(size: 13))
-                    .foregroundColor(Color.white.opacity(0.5))
-                    .multilineTextAlignment(.center)
+                    .foregroundColor(Color.white.opacity(0.7))
+                
+                Spacer()
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     @ViewBuilder
