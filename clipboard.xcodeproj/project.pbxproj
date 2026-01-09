@@ -130,6 +130,7 @@
 				1FEEAD5E2DC7BAE900031938 /* Sources */,
 				1FEEAD5F2DC7BAE900031938 /* Frameworks */,
 				1FEEAD602DC7BAE900031938 /* Resources */,
+				1F6471E92F07E5BB0035144B /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -265,6 +266,26 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		1F6471E92F07E5BB0035144B /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\nAPP_NAME=\"clipboard\"\nDEST=\"/Applications\"\n\n# Kill running instance if any\npkill -f \"$DEST/$APP_NAME.app\" 2>/dev/null || true\n\nmkdir -p \"$DEST\"\nrm -rf \"$DEST/$APP_NAME.app\"\ncp -R \"$BUILT_PRODUCTS_DIR/$APP_NAME.app\" \"$DEST\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		1FEEAD5E2DC7BAE900031938 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -341,7 +362,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;

@@ -20,6 +20,8 @@
     <string>This app needs to send keystrokes to paste clipboard content into other applications.</string>
     <key>NSInputMonitoringUsageDescription</key>
     <string>This app needs to monitor input to provide clipboard functionality.</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>This app needs Accessibility permission to simulate the Command+V keypress to paste the selected item into the currently focused application.</string>
     <key>SMAppService</key>
     <dict>
         <key>LoginItems</key>

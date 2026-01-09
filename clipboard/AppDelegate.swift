@@ -8,6 +8,7 @@ import Cocoa
 import SwiftUI
 import KeyboardShortcuts
 import Combine
+import UserNotifications
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private let clipboardManager = ClipboardManager()
@@ -23,6 +24,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Create the status item FIRST, directly in AppDelegate
         setupStatusItem()
+        
+        // Request Notification Permissions
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+            if let error = error {
+                print("Notification permission error: \(error)")
+            }
+        }
+
         
         // Initialize the overlay manager
         overlayManager = ClipboardOverlayManager()

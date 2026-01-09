@@ -1,6 +1,7 @@
 import Cocoa
 import SwiftUI
 import KeyboardShortcuts
+import UserNotifications
 
 extension KeyboardShortcuts.Name {
     static let showClipboardOverlay = Self("showClipboardOverlay")
@@ -22,6 +23,7 @@ class ClipboardOverlayManager: NSObject {
     private var panel: NSPanel?
     private var clipboardManager: ClipboardManager!
     private var eventMonitor: Any?
+    private let accessibilityManager = AccessibilityManager()
     
     override init() {
         super.init()
@@ -38,6 +40,25 @@ class ClipboardOverlayManager: NSObject {
         KeyboardShortcuts.onKeyDown(for: .showClipboardOverlay) { [weak self] in
             self?.toggleOverlay()
         }
+    }
+    func toggleOverlay() {
+        DispatchQueue.main.async {
+            if let panel = self.panel, panel.isVisible {
+                self.hideOverlay()
+                return
+            }
+            
+            self.showOverlay()
+        }
+    }
+    private func hideOverlay() {
+        // Remove event monitor
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        
+        panel?.orderOut(nil)
     }
     
     @objc private func showOverlayFromMenu() {
@@ -63,21 +84,66 @@ class ClipboardOverlayManager: NSObject {
         prefWindow.makeKeyAndOrderFront(nil)
     }
     
-    func toggleOverlay() {
-        DispatchQueue.main.async {
-            if let panel = self.panel, panel.isVisible {
-                self.hideOverlay()
-                return
-            }
+    func completePaste(with item: ClipboardItem) {
+        // 1. Set the system clipboard content
+        self.clipboardManager.setClipboard(item)
+
+        // 2. Hide the UI panel immediately
+        self.hideOverlay()
+
+        // 3. RELINQUISH FOCUS IMMEDIATELY
+        NSApp.hide(nil)
+        
+        // 4. TRIGGER THE PASTE AFTER A BUFFER
+        // We give the target app (Chrome, VS Code, etc.) 150ms to become "Key" again.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // Attempt to simulate paste. In App Sandbox, this often fails silently or is blocked.
+            // We can't easily detect if CGEvent was blocked, so we assume best effort.
+            // However, we can check if we have accessibility permissions first.
             
-            self.showOverlay()
+            if self.accessibilityManager.isGranted {
+                 self.clipboardManager.simulatePaste()
+            } else {
+                 // Fallback: Notify user to paste manually
+                 // Since we are hidden, we might want to show a notification or just rely on the user knowing.
+                 // For now, let's trust the user knows to paste if nothing happens, or we could send a notification.
+                 self.sendPasteNotification()
+            }
         }
     }
     
+    private func sendPasteNotification() {
+        let content = UNMutableNotificationContent()
+        content.title = "Copied to Clipboard"
+        content.body = "Press ⌘V to paste."
+        
+        let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+    
     private func showOverlay() {
-        let view = ClipboardOverlayView(clipboardManager: self.clipboardManager) {
-            self.hideOverlay()
-        }
+//        let view = ClipboardOverlayView(clipboardManager: self.clipboardManager) {
+//            self.hideOverlay()
+//        }
+        let view = ClipboardOverlayView(
+            clipboardManager: self.clipboardManager,
+            onDismiss: { [weak self] in
+                // Handle simple dismissal (like clicking outside)
+                self?.hideOverlay()
+                NSApp.hide(nil)
+            },
+            onSelectionAndDismiss: { [weak self] selectedItem in
+                // Handle item selection
+                guard let self = self else { return }
+                if let item = selectedItem {
+                    self.completePaste(with: item)
+                } else {
+                    self.hideOverlay()
+                    NSApp.hide(nil)
+                }
+            }
+        )
+
         let hosting = NSHostingController(rootView: view)
         
         // FIXED: Create panel with proper initializer
@@ -134,16 +200,6 @@ class ClipboardOverlayManager: NSObject {
         
         // Setup event monitor for dismissing on click outside
         self.setupEventMonitor()
-    }
-    
-    private func hideOverlay() {
-        // Remove event monitor
-        if let monitor = eventMonitor {
-            NSEvent.removeMonitor(monitor)
-            eventMonitor = nil
-        }
-        
-        panel?.orderOut(nil)
     }
     
     private func setupEventMonitor() {

@@ -109,6 +109,7 @@ struct HighlightedTextView: View {
 struct ClipboardOverlayView: View {
     @ObservedObject var clipboardManager: ClipboardManager
     var onDismiss: () -> Void
+    var onSelectionAndDismiss: (ClipboardItem?) -> Void
     @State private var hoveredIndex: Int? = nil
     @State private var selectedItem: ClipboardItem? = nil
     @State private var showCopiedIndicator = false
@@ -118,7 +119,6 @@ struct ClipboardOverlayView: View {
     @StateObject private var accessibilityManager = AccessibilityManager()
     @State private var showAccessibilityAlert = false
     @State private var selectedIndex: Int = 0
-    
     var filteredItems: [ClipboardItem] {
         if searchText.isEmpty {
             return clipboardManager.items
@@ -384,7 +384,8 @@ struct ClipboardOverlayView: View {
     private func accessibilityAlertButtons() -> some View {
         Button("Open System Settings") {
             accessibilityManager.requestPermission()
-            onDismiss()
+//            onDismiss()
+            onSelectionAndDismiss(nil)
         }
         Button("Cancel", role: .cancel) {}
     }
@@ -412,6 +413,7 @@ struct ClipboardOverlayView: View {
             selectAndCopy(at: selectedIndex)
         case .escape:
             onDismiss()
+//            onSelectionAndDismiss(nil)
         default:
             break
         }
@@ -425,25 +427,14 @@ struct ClipboardOverlayView: View {
     }
     
     private func performCopyAndPaste(for item: ClipboardItem) {
-        clipboardManager.setClipboard(item)
-        
-        DispatchQueue.main.async {
-            // Re-check permission status
-            self.accessibilityManager.checkPermission()
-            
-            if self.accessibilityManager.isGranted {
-                withAnimation {
-                    self.showCopiedIndicator = true
-                }
-                
-                self.clipboardManager.simulatePaste()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    self.onDismiss()
-                }
-            } else {
-                self.showAccessibilityAlert = true
-            }
+        // 1. Check for accessibility permissions first
+        // We need this to be able to simulate the paste command
+        if accessibilityManager.isCurrentlyTrusted {
+             onSelectionAndDismiss(item)
+        } else {
+            // Force a check to update the state variable if needed, but mainly show the alert
+            accessibilityManager.checkPermission()
+            showAccessibilityAlert = true
         }
     }
     

@@ -202,20 +202,23 @@ class ClipboardManager: ObservableObject {
     }
     
     func simulatePaste() {
-        // Simulate pressing Cmd+V to paste
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        // We add a 0.1s - 0.2s delay to allow the 'NSApp.hide'
+        // to finish deactivating our app and returning focus to the target.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             let source = CGEventSource(stateID: .combinedSessionState)
             
-            // Create a keyboard event for Command+V (paste)
-            let keyVDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true)  // 'V' key
-            keyVDown?.flags = .maskCommand
+            // V Key Code is 9 (0x09)
+            guard let vKeyDown = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: true),
+                  let vKeyUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false) else {
+                return
+            }
             
-            let keyVUp = CGEvent(keyboardEventSource: source, virtualKey: 0x09, keyDown: false)
-            keyVUp?.flags = .maskCommand
+            vKeyDown.flags = .maskCommand
+            vKeyUp.flags = .maskCommand
             
-            // Post the events
-            keyVDown?.post(tap: .cgAnnotatedSessionEventTap)
-            keyVUp?.post(tap: .cgAnnotatedSessionEventTap)
+            // Post to the system-wide event tap
+            vKeyDown.post(tap: .cgAnnotatedSessionEventTap)
+            vKeyUp.post(tap: .cgAnnotatedSessionEventTap)
         }
     }
     

@@ -24,9 +24,6 @@ class AccessibilityManager: ObservableObject {
         DispatchQueue.main.async {
             self.isGranted = trusted
         }
-        
-        print("🔐 Accessibility Permission: \(trusted)")
-        print("📦 Bundle ID: \(Bundle.main.bundleIdentifier ?? "unknown")")
     }
     
     func requestPermission() {
@@ -37,6 +34,11 @@ class AccessibilityManager: ObservableObject {
         DispatchQueue.main.async {
             self.isGranted = trusted
         }
+    }
+    
+    var isCurrentlyTrusted: Bool {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        return AXIsProcessTrustedWithOptions(options)
     }
     
     func openSystemPreferences() {
