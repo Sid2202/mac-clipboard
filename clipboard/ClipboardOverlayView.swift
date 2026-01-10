@@ -117,6 +117,7 @@ struct ClipboardOverlayView: View {
     @State private var searchText = ""
     @FocusState private var isSearchFocused: Bool
     @StateObject private var accessibilityManager = AccessibilityManager()
+    @StateObject private var trialManager = TrialManager.shared
     @State private var showAccessibilityAlert = false
     @State private var selectedIndex: Int = 0
     var filteredItems: [ClipboardItem] {
@@ -144,6 +145,13 @@ struct ClipboardOverlayView: View {
             )
             
             copiedIndicatorView
+            
+            if trialManager.isTrialExpired && !trialManager.isPro {
+                UpgradeView(isPresented: .constant(true))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.8))
+                    .cornerRadius(12)
+            }
         }
         .frame(width: 360, height: min(550, CGFloat(filteredItems.count * 55) + 80))
         .cornerRadius(12)
